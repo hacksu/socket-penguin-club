@@ -20,13 +20,38 @@ app.get('/socket.io.js', (req, res) => {
     res.sendFile(path.join(__dirname, 'node_modules/socket.io-client/dist/socket.io.js'));
 });
 
+// A list of currently connected clients.
+var clients = [];
+
+
+function onClientConnect(socket) {
+    clients.push({
+        conn: socket
+    });
+    console.log('clients connected: ' + clients.length);
+}
+
+function onClientDisconnect(socket) {
+    var numClients = clients.length;
+    clients = clients.filter(item => item.conn !== socket);
+    console.log('client disconnected ' + numClients + ' => ' + clients.length);
+}
+
 // This is triggered when a client connects
 // and provides a socket for the server to
 // send or 'emit' messages to the client.
 io.on('connection', (socket) => {
-    
-    console.log('connected');
+    onClientConnect(socket);
 
+    socket.on('message', (msg) => {
+        for (var i = 0; i < clients.length; i++){
+            clients[i].conn.emit('fwd:msg', msg);
+        }
+    });
+    
+    socket.on('disconnect', () => {
+        onClientDisconnect(socket);
+    });
 });
 
 server.listen(8080);

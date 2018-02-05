@@ -3,12 +3,24 @@
         <script src="/socket.io.js" ></script>
     </head>
     <body>
+        <input onclick="sendMessage()" 
+               value="Send a message" 
+               type="button"
+               />
         <script>
             var socket = io('http://localhost:8080');
 
             socket.on('connect', () => {
                 console.log('connected');
-            })
+            });
+
+            socket.on('fwd:msg', (msg) => {
+                console.log(msg);
+            });
+
+            function sendMessage() {
+                socket.emit('message', 'test message');
+            }
         </script>
     </body>
 </html>
