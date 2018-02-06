@@ -108,3 +108,5 @@ socket.on('message', (msg) => {
     ...
 </script>
 ```
+
+## Having some fun
