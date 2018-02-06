@@ -1,36 +1,20 @@
 window.onload = function() {
 
-    var socket = io('http://localhost:8080');
-
-    socket.on('connect', () => {
-        console.log('connected');
-    });
-
-    socket.on('fwd:msg', (msg) => {
-        console.log(msg);
-    });
-
-    function sendMessage() {
-        socket.emit('message', 'test message');
-    }
-
     function penguin(element) {
         var x = 0;
         var y = 0;
         var update = () => {
             element.style.top = x;
             element.style.left = y;
-            socket.emit('move', {
-                xPos: x,
-                yPos: y
-            });
+            // Notifiy the server when we move
+            // Use the event name 'move'
         };
         return {
-            up: () => {
+            down: () => {
                 x += 10;
                 update();
             },
-            down: () => {
+            up: () => {
                 x -= 10;
                 update();
             },
@@ -45,7 +29,27 @@ window.onload = function() {
         };
     };
 
-    var me = penguin(document.getElementById('me'));
+    function moveOrCreatePenguin(move) {
+        var penguin = penguins.find(item => item.player === move.player);
+        if (penguin){
+            console.log('update');
+            penguin.sprite.style.top =  move.loc.xPos;
+            penguin.sprite.style.left = move.loc.yPos;
+        } else {
+            console.log('create new');
+            var img = new Image();
+            img.className = 'penguin';
+            img.id = 'player' + move.player;
+            img.src = '/penguin.gif';
+            document.body.appendChild(img);
+            img.style.top = move.xPos;
+            img.style.left = move.yPos;
+            move.sprite = img;
+            penguins.push(move)
+        }
+    }
+
+    // TODO: create a penguin from the onscreen image.
 
     var penguins = [];
 
@@ -66,46 +70,30 @@ window.onload = function() {
         console.log(move);
         if (me.id === move.player) return; 
 
-        var penguin = penguins.find(item => item.player === move.player);
-        if (penguin){
-            console.log('update');
-            penguin.sprite.style.top =  move.loc.xPos;
-            penguin.sprite.style.left = move.loc.yPos;
-        } else {
-            console.log('create new');
-            var img = new Image();
-            img.className = 'penguin';
-            img.id = 'player' + move.player;
-            img.src = '/penguin.gif';
-            document.body.appendChild(img);
-            img.style.top = move.xPos;
-            img.style.left = move.yPos;
-            move.sprite = img;
-            penguins.push(move)
-        }
+        moveOrCreatePenguin(move);
     });
 
     document.addEventListener('keydown', event => {
         if (event.keyCode == 87){
             // Up key
             console.log('up');
-            me.down();
+            
         } else if (event.keyCode == 83) {
             // Down key
             console.log('down');
-            me.up();
+            
         } else if (event.keyCode == 65) {
             // Left key
             console.log('left');
-            me.left();
+            
         } else if (event.keyCode == 68) {
             // Right key
             console.log('right');
-            me.right();
+            
         } else if (event.keyCode == 84) {
             // Talk key
             var message = prompt('Send a message.');
             console.log(message);
         }
     });
-}
+};

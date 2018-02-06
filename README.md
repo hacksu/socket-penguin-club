@@ -110,3 +110,120 @@ socket.on('message', (msg) => {
 ```
 
 ## Having some fun
+
+1. Add some resources to the head of our HTML.
+```html
+<head>
+    ...
+    <script src="/mechanics.js"></script>
+    <link rel="stylesheet" href="/style.css"></link>
+</head>
+```
+
+2. Render our character on the screen.
+```html
+<body>
+    <img src="/penguin.gif" class="penguin" id="me" />
+</body>
+```
+
+3. Move our socket code into mechanics.js inside the `window.onload` callback function.
+```javascript
+window.onload = () => {
+    // Put socket code here.
+};
+```
+
+4. Get a reference to our character and wire it up in the key press handlers so that he moves.
+```javascript
+    var me = penguin(document.getElementById('me'));
+    ...
+    document.addEventListener('keydown', event => {
+    if (event.keyCode == 87){
+        // Up key
+        console.log('up');
+        me.up();                // <--- This line.
+    }
+    // Fill out the others too.
+    ...
+```
+
+5. Send the move data to the server in `update()`.
+```javascript
+    socket.emit('move', {
+        xPos: x,
+        yPos: y
+    });
+```
+
+6. In the server, add a handler for the move event that sends the player number and the move to each of the other clients.
+```javascript
+    socket.on('move', (location) => {
+        for (var i = 0; i < clients.length; i++){
+            clients[i].conn.emit('fwd:move',{
+                player: socket.clientNum,
+                loc: location
+            } );
+        }
+    });
+```
+
+7. Listen for fowarded movements clintside and move the sprites accordingly.
+```javascript
+    socket.on('fwd:move', move => {
+        console.log(move);
+        if (me.id === move.player) return; 
+
+        moveOrCreatePenguin(move);
+    });
+```
+
+8. Add some player ids to the server to keep track of clients.
+```javascript
+var currentClientNum = 0;
+
+io.on('connection', (socket) => {
+    socket.clientNum = currentClientNum;
+    currentClientNum++;
+    onClientConnect(socket);
+    socket.emit('playerId', socket.clientNum);
+    ...
+```
+
+9. Add a short handler to update your player number.
+```javascript
+    socket.on('playerId', id => {
+        me.id = id;
+    });
+```
+
+10. And finally, remove penguins when someone disconnects.
+```javascript
+    /// client side
+    socket.on('fwd:disconnect', playerId => {
+        console.log(playerId);
+        var toRemove = penguins.find(p => p.player === playerId);
+        if (toRemove) {
+            document.body.removeChild(toRemove.sprite);
+        }
+        penguins = penguins.filter(p => p.player !== playerId); 
+    });
+```
+11. And on the serverside too.
+```javascript
+    /// server side, update onDisconnect to look like this.
+    socket.on('disconnect', () => {
+        onClientDisconnect(socket);
+        for (var i = 0; i < clients.length; i++){
+            clients[i].conn.emit('fwd:disconnect', socket.clientNum);
+        }
+    });
+```
+
+Add that secret sauce of debugging, and voilà! A basic club penguin rip off.
+
+## Completed Code
+The complete project can be found on Github at: https://github.com/hacksu/socket-penguin-club/tree/completed
+
+## Challenge
+Create a speech bubble and show a message for a penguin. Maybe even with [browser notifications](https://developer.mozilla.org/en-US/docs/Web/API/notification)?
