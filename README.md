@@ -1,7 +1,7 @@
 # Socket IO Penguin Club
 
 ## What is SocketIO?
-SocketIO is a javascript library that allows real-time two way communication between a client and server.
+SocketIO is a javascript library that allows real-time two way communication between a client and server. Extremely useful.
 
 ## Setup of a new project
 1. Create a new folder
